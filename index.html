@@ -9,48 +9,58 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="交班站">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1f5c68">
+<meta name="theme-color" content="#faf9f5">
 <style>
   html, body { margin: 0; min-height: 100%; background: #faf9f5; color: #1b2420;
     font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
     -webkit-font-smoothing: antialiased; }
   .wrap { min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 32px 24px; text-align: center; box-sizing: border-box; }
-  .logo { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 12px 30px -12px rgba(0,0,0,.35); }
-  h1 { font-size: 22px; font-weight: 700; color: #1f5c68; margin: 18px 0 4px; }
-  p { color: #5e6b65; font-size: 13.5px; line-height: 1.7; margin: 0 0 22px; max-width: 300px; }
-  a.go { display: inline-flex; align-items: center; gap: 8px; background: #1f5c68; color: #fff;
-    text-decoration: none; padding: 14px 30px; border-radius: 14px; font-weight: 600; font-size: 16px;
-    box-shadow: 0 8px 20px -8px rgba(31,92,104,.6); }
-  a.go:active { filter: brightness(.92); }
-  .hint { margin-top: 26px; font-size: 12px; color: #8b968f; line-height: 1.7; max-width: 300px; }
-  .hint b { color: #5e6b65; }
+    justify-content: center; padding: 40px 26px calc(40px + env(safe-area-inset-bottom));
+    text-align: center; box-sizing: border-box; }
+  .logo { width: 104px; height: 104px; border-radius: 24px;
+    box-shadow: 0 16px 36px -14px rgba(31,92,104,.45); }
+  h1 { font-size: 23px; font-weight: 700; color: #1f5c68; margin: 20px 0 5px; letter-spacing: .02em; }
+  .sub { color: #5e6b65; font-size: 13.5px; line-height: 1.7; margin: 0 0 30px; }
+  a.go { display: inline-flex; align-items: center; gap: 9px; background: #1f5c68; color: #fff;
+    text-decoration: none; padding: 15px 34px; border-radius: 15px; font-weight: 600; font-size: 16px;
+    box-shadow: 0 10px 24px -8px rgba(31,92,104,.55); -webkit-tap-highlight-color: transparent; }
+  a.go:active { transform: scale(.97); filter: brightness(.93); }
+  .hint { margin-top: 30px; font-size: 12px; color: #8b968f; line-height: 1.75; max-width: 290px; }
+  .hint b { color: #5e6b65; font-weight: 600; }
+  .loading { margin-top: 22px; font-size: 12px; color: #a9b2ab; letter-spacing: .06em; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<div class="wrap" id="wrap">
-  <img class="logo" src="icon-192.png" alt="交班站">
+<div class="wrap">
+  <img class="logo" src="icon-192.png" alt="">
   <h1>交班站</h1>
-  <p>醫院資安小組的交接站</p>
+  <div class="sub">醫院資安小組 · 交接即紀錄</div>
   <a class="go" id="go" href="#">開啟交班站 →</a>
-  <div class="hint">
-    第一次用:點右下角 <b>分享</b> → <b>加入主畫面</b>,
-    之後從主畫面的圖示點進來就會直接開。
+  <div class="hint" id="hint">
+    第一次用 → 點下方 <b>分享</b> 圖示 → <b>加入主畫面</b><br>
+    之後從主畫面圖示點進來
   </div>
+  <div class="loading" id="loading" hidden>開啟中…</div>
 </div>
 <script>
   (function () {
     var EXEC = "https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec";
-    document.getElementById('go').href = EXEC;
+    var go = document.getElementById('go');
+    go.href = EXEC;
     var standalone = (window.navigator.standalone === true) ||
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
     if (standalone) {
-      // 從主畫面圖示開啟 → 直接進 App(頂層導向,Google 登入正常運作)
-      location.replace(EXEC);
+      // 已在主畫面 —— 不用再教「加入主畫面」
+      document.getElementById('hint').hidden = true;
     }
+    // 點按鈕時給一點回饋
+    go.addEventListener('click', function () {
+      document.getElementById('loading').hidden = false;
+    });
   })();
 </script>
 </body>
