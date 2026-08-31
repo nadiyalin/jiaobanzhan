@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>交班站</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="交班站">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f5c68">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #faf9f5;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  #app { border: 0; width: 100%; height: 100%; display: block; }
+  #fallback { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    padding: 28px; text-align: center; background: #faf9f5; }
+  #fallback .box { max-width: 320px; }
+  #fallback h1 { margin: 0; font-size: 22px; font-weight: 700; color: #1f5c68; }
+  #fallback p { color: #5e6b65; font-size: 14px; line-height: 1.7; margin: 12px 0 20px; }
+  #fallback a { display: inline-block; background: #1f5c68; color: #fff; text-decoration: none;
+    padding: 13px 26px; border-radius: 13px; font-weight: 600; font-size: 15px; }
+  #spin { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #8b968f; font-size: 13px; letter-spacing: .05em; }
+</style>
+</head>
+<body>
+<div id="spin">交班站 載入中…</div>
+<iframe id="app"
+  src="https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec"
+  allow="clipboard-write; clipboard-read"></iframe>
+<div id="fallback">
+  <div class="box">
+    <h1>交班站</h1>
+    <p>頁面沒在這裡載入 —— 可能是要先登入 NTU 帳號。<br>點下面用新分頁開啟:</p>
+    <a href="https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec"
+      target="_blank" rel="noopener">開啟交班站 →</a>
+  </div>
+</div>
+<script>
+  (function () {
+    var app = document.getElementById('app');
+    var spin = document.getElementById('spin');
+    var fb = document.getElementById('fallback');
+    var settled = false;
+    app.addEventListener('load', function () {
+      settled = true;
+      spin.style.display = 'none';
+    });
+    // 若 8 秒內 iframe 完全沒有 load 事件(被 X-Frame 擋 / 登入頁 DENY),顯示 fallback
+    setTimeout(function () {
+      if (settled) return;
+      app.style.display = 'none';
+      spin.style.display = 'none';
+      fb.style.display = 'flex';
+    }, 8000);
+  })();
+</script>
+</body>
+</html>
