@@ -14,50 +14,43 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1f5c68">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #faf9f5;
-    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
-  #app { border: 0; width: 100%; height: 100%; display: block; }
-  #fallback { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    padding: 28px; text-align: center; background: #faf9f5; }
-  #fallback .box { max-width: 320px; }
-  #fallback h1 { margin: 0; font-size: 22px; font-weight: 700; color: #1f5c68; }
-  #fallback p { color: #5e6b65; font-size: 14px; line-height: 1.7; margin: 12px 0 20px; }
-  #fallback a { display: inline-block; background: #1f5c68; color: #fff; text-decoration: none;
-    padding: 13px 26px; border-radius: 13px; font-weight: 600; font-size: 15px; }
-  #spin { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    color: #8b968f; font-size: 13px; letter-spacing: .05em; }
+  html, body { margin: 0; min-height: 100%; background: #faf9f5; color: #1b2420;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 32px 24px; text-align: center; box-sizing: border-box; }
+  .logo { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 12px 30px -12px rgba(0,0,0,.35); }
+  h1 { font-size: 22px; font-weight: 700; color: #1f5c68; margin: 18px 0 4px; }
+  p { color: #5e6b65; font-size: 13.5px; line-height: 1.7; margin: 0 0 22px; max-width: 300px; }
+  a.go { display: inline-flex; align-items: center; gap: 8px; background: #1f5c68; color: #fff;
+    text-decoration: none; padding: 14px 30px; border-radius: 14px; font-weight: 600; font-size: 16px;
+    box-shadow: 0 8px 20px -8px rgba(31,92,104,.6); }
+  a.go:active { filter: brightness(.92); }
+  .hint { margin-top: 26px; font-size: 12px; color: #8b968f; line-height: 1.7; max-width: 300px; }
+  .hint b { color: #5e6b65; }
 </style>
 </head>
 <body>
-<div id="spin">交班站 載入中…</div>
-<iframe id="app"
-  src="https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec"
-  allow="clipboard-write; clipboard-read"></iframe>
-<div id="fallback">
-  <div class="box">
-    <h1>交班站</h1>
-    <p>頁面沒在這裡載入 —— 可能是要先登入 NTU 帳號。<br>點下面用新分頁開啟:</p>
-    <a href="https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec"
-      target="_blank" rel="noopener">開啟交班站 →</a>
+<div class="wrap" id="wrap">
+  <img class="logo" src="icon-192.png" alt="交班站">
+  <h1>交班站</h1>
+  <p>醫院資安小組的交接站</p>
+  <a class="go" id="go" href="#">開啟交班站 →</a>
+  <div class="hint">
+    第一次用:點右下角 <b>分享</b> → <b>加入主畫面</b>,
+    之後從主畫面的圖示點進來就會直接開。
   </div>
 </div>
 <script>
   (function () {
-    var app = document.getElementById('app');
-    var spin = document.getElementById('spin');
-    var fb = document.getElementById('fallback');
-    var settled = false;
-    app.addEventListener('load', function () {
-      settled = true;
-      spin.style.display = 'none';
-    });
-    // 若 8 秒內 iframe 完全沒有 load 事件(被 X-Frame 擋 / 登入頁 DENY),顯示 fallback
-    setTimeout(function () {
-      if (settled) return;
-      app.style.display = 'none';
-      spin.style.display = 'none';
-      fb.style.display = 'flex';
-    }, 8000);
+    var EXEC = "https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec";
+    document.getElementById('go').href = EXEC;
+    var standalone = (window.navigator.standalone === true) ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (standalone) {
+      // 從主畫面圖示開啟 → 直接進 App(頂層導向,Google 登入正常運作)
+      location.replace(EXEC);
+    }
   })();
 </script>
 </body>
