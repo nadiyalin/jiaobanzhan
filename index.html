@@ -4,67 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>交班站</title>
-<link rel="icon" type="image/png" sizes="192x192" href="https://nadiyalin.github.io/jiaobanzhan/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="https://nadiyalin.github.io/jiaobanzhan/icon-512.png">
-<link rel="apple-touch-icon" href="https://nadiyalin.github.io/jiaobanzhan/icon-180.png">
-<link rel="apple-touch-icon" sizes="180x180" href="https://nadiyalin.github.io/jiaobanzhan/icon-180.png">
-<link rel="apple-touch-icon" sizes="192x192" href="https://nadiyalin.github.io/jiaobanzhan/icon-192.png">
-<link rel="apple-touch-icon-precomposed" href="https://nadiyalin.github.io/jiaobanzhan/icon-180.png">
-<link rel="manifest" href="https://nadiyalin.github.io/jiaobanzhan/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="交班站">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#faf9f5">
+<meta name="theme-color" content="#d8c0a0">
+<!--
+  交班站 launcher —— 現在只是「短網址轉址」。
+  真正的啟動頁在 Apps Script exec 的 ?v=home(忙Day 全螢幕圖 + 進入鈕)。
+  使用者流程:開這個短網址 → 立刻跳到 exec?v=home → 在那頁「加入主畫面」
+  → iOS 截「忙Day」當圖示 → 點圖示 → 同網域進 App、無網址列。
+-->
+<meta http-equiv="refresh" content="0; url=https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec?v=home">
 <style>
-  html, body { margin: 0; min-height: 100%; background: #faf9f5; color: #1b2420;
-    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-    -webkit-font-smoothing: antialiased; }
-  .wrap { min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 40px 26px calc(40px + env(safe-area-inset-bottom));
-    text-align: center; box-sizing: border-box; }
-  .logo { width: 104px; height: 104px; border-radius: 24px;
-    box-shadow: 0 16px 36px -14px rgba(31,92,104,.45); }
-  h1 { font-size: 23px; font-weight: 700; color: #1f5c68; margin: 20px 0 5px; letter-spacing: .02em; }
-  .sub { color: #5e6b65; font-size: 13.5px; line-height: 1.7; margin: 0 0 30px; }
-  a.go { display: inline-flex; align-items: center; gap: 9px; background: #1f5c68; color: #fff;
-    text-decoration: none; padding: 15px 34px; border-radius: 15px; font-weight: 600; font-size: 16px;
-    box-shadow: 0 10px 24px -8px rgba(31,92,104,.55); -webkit-tap-highlight-color: transparent; }
-  a.go:active { transform: scale(.97); filter: brightness(.93); }
-  .hint { margin-top: 30px; font-size: 12px; color: #8b968f; line-height: 1.75; max-width: 290px; }
-  .hint b { color: #5e6b65; font-weight: 600; }
-  .loading { margin-top: 22px; font-size: 12px; color: #a9b2ab; letter-spacing: .06em; }
-  [hidden] { display: none !important; }
+  html,body{margin:0;height:100%;background:#d8c0a0;color:#1e2a44;
+    font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    display:flex;align-items:center;justify-content:center;}
+  a{color:#1e2a44;font-weight:600;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <img class="logo" src="icon-192.png" alt="">
-  <h1>交班站</h1>
-  <div class="sub">醫院資安小組 · 交接即紀錄</div>
-  <a class="go" id="go" href="#">開啟交班站 →</a>
-  <div class="hint" id="hint">
-    第一次用 → 點下方 <b>分享</b> 圖示 → <b>加入主畫面</b><br>
-    之後從主畫面圖示點進來
-  </div>
-  <div class="loading" id="loading" hidden>開啟中…</div>
-</div>
+<div>開啟中… <a id="go" href="https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec?v=home">沒反應點這裡</a></div>
 <script>
-  (function () {
-    var EXEC = "https://script.google.com/a/macros/g.ntu.edu.tw/s/AKfycbwI3l1JIIY1I00JshvLIRxwNwbRj-EWaMh2LmcKTycF9s2_z4rgzFjLfCr9zRqNo0ghbA/exec";
-    var go = document.getElementById('go');
-    go.href = EXEC;
-    var standalone = (window.navigator.standalone === true) ||
-      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if (standalone) {
-      // 已在主畫面 —— 不用再教「加入主畫面」
-      document.getElementById('hint').hidden = true;
-    }
-    // 點按鈕時給一點回饋
-    go.addEventListener('click', function () {
-      document.getElementById('loading').hidden = false;
-    });
-  })();
+  location.replace(document.getElementById('go').href);
 </script>
 </body>
 </html>
