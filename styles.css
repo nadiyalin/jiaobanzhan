@@ -323,6 +323,8 @@ button.tag.lt-from:hover{box-shadow:inset 0 0 0 1px var(--accent)}
   color:var(--ink-soft);line-height:1.3}
 .cal-hint .lg{display:inline-flex;align-items:center;gap:4px}
 .cal-hint .lg.dim{color:var(--ink-faint)}
+.cal-cache-note{margin-top:14px;padding:9px 10px;border-radius:9px;background:var(--accent-soft);
+  color:var(--ink-soft);font-size:11px;line-height:1.5}
 .cal-hint .sw{width:15px;height:13px;border-radius:3px;flex:none;display:inline-flex;
   align-items:center;justify-content:center;font-size:8.5px;font-weight:700;
   font-family:"IBM Plex Mono",monospace}

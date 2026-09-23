@@ -23,6 +23,7 @@
 
   // ═══ 狀態 ═══
   var board = null, scr = 'board', busy = false;
+  var boardLoadedAt = null;      // 這份 board 資料是什麼時候抓到的(日曆分頁底部的快取提醒要用)
   var expState = {};             // 個人設定「匯出報表」按鈕狀態:{ exportKanban|exportYearArchive: 'loading'|'done'|'error' }
   var openAudit = null;          // 點進某場次
   var openGroups = {};           // 小節摺疊
@@ -189,7 +190,7 @@
     if (busy) return;
     busy = true; render();
     api.submit(type, params).then(function (b) {
-      board = b; busy = false; sel = {}; closeModal();
+      board = b; boardLoadedAt = Date.now(); busy = false; sel = {}; closeModal();
       if (okMsg) toast(okMsg);
       render();
     }).catch(function (err) { busy = false; render(); toast('⚠ ' + (err.message || err)); });
@@ -1959,8 +1960,14 @@
       + (t.status === 'done' ? '<span class="cal-done">✓</span>' : '') + '</button>';
   }
 
+  function calCacheNote() {
+    if (!boardLoadedAt) return '';
+    var d = new Date(boardLoadedAt), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    return '<div class="cal-cache-note">📅 行事曆快取 30 分鐘 · 資料整理於 ' + hm
+      + '。剛改過行事曆事件、不確定有沒有反映,按上面「⟳」重新抓一次。</div>';
+  }
   function renderCal() {
-    screen.innerHTML = calBar() + (calView === 'list' ? calListBody() : calMonthBody());
+    screen.innerHTML = calBar() + (calView === 'list' ? calListBody() : calMonthBody()) + calCacheNote();
   }
 
   function calMonthBody() {
@@ -3736,6 +3743,18 @@
     clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('show'); }, 2800);
   }
 
+  // 手機鍵盤彈出時,底部分頁列(總覽/我的待辦/日曆/名冊)會被壓到鍵盤正上方、
+  // 卡在畫面中間很奇怪(使用者截圖回報)。跟大部分 App 一樣:有輸入框在打字時先把它藏起來,
+  // 打完離開欄位再恢復,modal 裡的輸入框不用管(modal 蓋滿全螢幕,底部列本來就看不到)。
+  function syncTabsForKeyboard() {
+    var act = document.activeElement;
+    var typing = !!(act && (act.tagName === 'INPUT' || act.tagName === 'TEXTAREA'));
+    var tabsEl = document.getElementById('tabs');
+    if (tabsEl) tabsEl.style.display = typing ? 'none' : '';
+  }
+  document.addEventListener('focusin', syncTabsForKeyboard);
+  document.addEventListener('focusout', function () { setTimeout(syncTabsForKeyboard, 0); });
+
   // 回到前景時,若正在看某場次,馬上刷一次(不用等下一個 15 秒 tick)
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
@@ -3744,7 +3763,7 @@
   });
 
   // ═══ 啟動 ═══
-  api.getBoard().then(function (b) { board = b; render(); checkLineQuotaWarn(); })
+  api.getBoard().then(function (b) { board = b; boardLoadedAt = Date.now(); render(); checkLineQuotaWarn(); })
     .catch(function (err) {
       // 自動重試都失敗才會到這 —— 給一顆重新載入鈕,不用手動下拉重整
       screen.innerHTML = '<div class="err">連不上伺服器（' + esc(String(err && (err.message || err) || '連線問題')) + '）'
