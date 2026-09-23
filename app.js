@@ -1964,7 +1964,7 @@
     if (!boardLoadedAt) return '';
     var d = new Date(boardLoadedAt), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
     return '<div class="cal-cache-note">📅 行事曆快取 30 分鐘 · 資料整理於 ' + hm
-      + '。剛改過行事曆事件、不確定有沒有反映,按上面「⟳」重新抓一次。</div>';
+      + '。如剛改過行事曆事件、不確定有沒有反映,按上面「⟳」重新抓一次。</div>';
   }
   function renderCal() {
     screen.innerHTML = calBar() + (calView === 'list' ? calListBody() : calMonthBody()) + calCacheNote();
