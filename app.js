@@ -2646,7 +2646,7 @@
   var ICO_CHEV = '<svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>';
   var ICO_PLUS = '<svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>';
   var ICO_HELP = '<svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"></circle><path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
-  function notifIco(k) { return k === '場次改期' ? '📅' : k === '編輯任務' ? '✏️' : k === '進度更新' ? '📝' : k === '範本' ? '✎' : k === '認領' ? '🙋' : '🔔'; }
+  function notifIco(k) { return k === '場次改期' ? '📅' : k === '編輯任務' ? '✏️' : k === '進度更新' ? '📝' : k === '範本' ? '✎' : k === '新增場次' ? '🗂️' : k === '認領' ? '🙋' : '🔔'; }
   function selCount() { return Object.keys(sel).filter(function (k) { return sel[k]; }).length; }
   function render() {
     if (!board) return;
