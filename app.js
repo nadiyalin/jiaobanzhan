@@ -934,8 +934,10 @@
       + '<div class="lt-spin-top"><span class="lt-spin-name">' + esc(t.name) + '</span></div>'
       + '<div class="tags">' + tags.join('') + '</div>'
       + (t.note2 ? '<div class="task-note">📝 ' + esc(t.note2) + '</div>' : '')
-      + '<div class="lt-spin-m"><span class="av-sm">' + esc(t.owner ? pShort(t.owner) : '?') + '</span>'
-      + esc(t.owner ? pName(t.owner) : '待認領') + '</div>';
+      + (isTeam(t)
+          ? '<div class="lt-spin-m"><span class="av-sm">' + ICO_USERS + '</span>團隊<span class="team-sub"> · ' + esc(teamNames(t)) + '</span></div>'
+          : '<div class="lt-spin-m"><span class="av-sm">' + esc(t.owner ? pShort(t.owner) : '?') + '</span>'
+            + esc(t.owner ? pName(t.owner) : '待認領') + '</div>');
     if (!done && ws)
       h += '<div class="lt-spin-wait">⏳ 等 ' + esc(t.waitWho) + (t.waitReplyBy ? ' · 應回 ' + esc(t.waitReplyBy.slice(5)) : '') + '</div>';
     h += '</button>';
@@ -1601,7 +1603,9 @@
     var siteOpts = board.sites.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
     var ownerOpts = '<option value="">待認領</option><option value="__me__">我來負責</option>'
       + board.people.filter(function (p) { return !board.me || p.id !== board.me.id; })
-          .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('');
+          .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('')
+      + '<option value="__team__">👥 團隊共同執行</option>';
+    var teamPicked = {};
     var pend = [];
     openModal('<div class="lede">從長期追蹤拆衍生任務</div><h3>' + esc(ltName(it)) + '</h3>'
       + '<div class="batch-basket" id="spBasket"></div>'
@@ -1610,13 +1614,26 @@
       + '<div class="fld"><span>類型</span><select id="spKind"><option>公文</option><option>信件</option><option>文件</option><option>報帳</option><option>表單</option><option>其他行政</option></select></div></div>'
       + '<div class="fld-row"><div class="fld"><span>目標結束日 選填</span><input id="spDue" type="date"></div>'
       + '<div class="fld"><span>負責人</span><select id="spOwner">' + ownerOpts + '</select></div></div>'
+      + '<div class="fld" id="spTeamBox" style="display:none"><span>誰一起扛(至少勾 2 人)</span><div class="hchips" id="spTeam">'
+      + board.people.map(function (p) { return '<button type="button" data-sptm="' + p.id + '" aria-pressed="false"><span class="av-sm">' + esc(p.short) + '</span>' + esc(p.name) + '</button>'; }).join('')
+      + '</div></div>'
       + '<div class="fld"><span>文件位置 選填 · 留白 = 沿用母任務的</span><input id="spFolder" placeholder="https://..." value="' + esc(it.folder || '') + '"></div>'
       + '<div class="fld"><span>附註 選填</span><textarea id="spNote" rows="2"></textarea></div>'
       + '<div class="fld-hint">站點 / 類型 / 到期 / 負責 加下一筆時會留著;任務名、文件位置、附註每筆分開填。整批只在時間軸記一筆、LINE 只發一則。</div>'
       + '<button class="btn" id="spAdd" style="width:100%">＋ 再拆一筆</button>'
       + '<div class="sheet-acts"><button class="btn primary" id="spGo" disabled>完成</button>'
       + '<button class="btn ghost" data-close>取消</button></div>');
-    function cur() { return { name: v('spName'), site: v('spSite'), kind: v('spKind'), due: v('spDue'), owner: v('spOwner'), folder: v('spFolder'), note2: v('spNote') }; }
+    function cur() {
+      var o = v('spOwner'), team = o === '__team__' ? Object.keys(teamPicked).filter(function (k) { return teamPicked[k]; }) : null;
+      return { name: v('spName'), site: v('spSite'), kind: v('spKind'), due: v('spDue'), owner: team ? '' : o, coOwners: team, folder: v('spFolder'), note2: v('spNote') };
+    }
+    document.getElementById('spOwner').onchange = function () {
+      document.getElementById('spTeamBox').style.display = this.value === '__team__' ? '' : 'none';
+    };
+    document.getElementById('spTeam').onclick = function (e) {
+      var b = e.target.closest('[data-sptm]'); if (!b) return;
+      var k = b.dataset.sptm; teamPicked[k] = !teamPicked[k]; b.setAttribute('aria-pressed', String(!!teamPicked[k]));
+    };
     function draw() {
       var bk = document.getElementById('spBasket');
       if (!pend.length) bk.innerHTML = '<span class="bk-empty">還沒拆任何一筆 —— 填好下面按「＋ 再拆一筆」</span>';
@@ -1635,6 +1652,7 @@
     document.getElementById('spAdd').onclick = function () {
       var c = cur();
       if (!c.name) { toast('請填任務名'); document.getElementById('spName').focus(); return; }
+      if (c.coOwners && c.coOwners.length < 2) { toast('團隊共同執行至少要勾 2 人'); return; }
       pend.push(c);
       document.getElementById('spNote').value = '';
       var ni = document.getElementById('spName'); ni.value = ''; ni.focus();
@@ -1644,13 +1662,14 @@
       var all = pend.slice();
       var c = cur(); if (c.name) all.push(c);
       if (!all.length) return;
+      if (c.name && c.coOwners && c.coOwners.length < 2) { toast('團隊共同執行至少要勾 2 人'); return; }
       var rows = all.map(function (r) {
         var own = (r.owner === '__me__') ? (board.me ? board.me.id : '') : r.owner;
-        return { name: r.name, site: r.site, kind: r.kind, due: r.due, owner: own, folder: r.folder, note2: r.note2 };
+        return { name: r.name, site: r.site, kind: r.kind, due: r.due, owner: own, coOwners: r.coOwners, folder: r.folder, note2: r.note2 };
       });
       if (rows.length === 1) {
         var r0 = rows[0];
-        go('ltSpin', { id: parentId, name: r0.name, site: r0.site, kind: r0.kind, due: r0.due, owner: r0.owner, folder: r0.folder, note2: r0.note2 }, '已拆出衍生任務');
+        go('ltSpin', { id: parentId, name: r0.name, site: r0.site, kind: r0.kind, due: r0.due, owner: r0.owner, coOwners: r0.coOwners, folder: r0.folder, note2: r0.note2 }, '已拆出衍生任務');
       } else {
         go('ltSpinBatch', { id: parentId, rows: rows }, '已拆出 ' + rows.length + ' 個衍生任務');
       }
