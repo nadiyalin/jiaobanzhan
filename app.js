@@ -1883,7 +1883,8 @@
     var p = pget(o); return p && p.tag ? p.tag : CAL_TAG[o] || '?';
   }
   // 長期追蹤任務不進認領池 —— 沒人顧(ltWorking)時歸「追」這桶,不要當成待認領
-  function calOwnerOf(t) { return t.owner || t.ltWorking || (t.longTrack ? 'lt' : 'pool'); }
+  // 團隊共同執行(coOwners ≥2 人)一律歸「共」,不管 owner 欄還留著誰
+  function calOwnerOf(t) { return isTeam(t) ? 'team' : (t.owner || t.ltWorking || (t.longTrack ? 'lt' : 'pool')); }
   // 這個 owner(wu/lin/tsai/pool/team)在目前篩選下要不要顯示;team 一律顯示
   function calShow(o) { return o === 'team' || !calPeople.length || calPeople.indexOf(o) >= 0; }
 
