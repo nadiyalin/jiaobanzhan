@@ -239,11 +239,14 @@
     if (open) {
       h += '<div class="ck-body">'
         + arr.map(function (it) {
-          return '<label class="ck-row' + (it.done ? ' on' : '') + '">'
+          return '<div class="ck-row' + (it.done ? ' on' : '') + '" data-ckrow="' + it.id + '">'
+            + '<span class="ck-grip" data-ckgrip="' + t.rowId + '¦' + it.id + '" title="按住拖曳排序" aria-label="拖曳排序">⠿</span>'
+            + '<label class="ck-lab">'
             + '<input type="checkbox" data-cktick="' + t.rowId + '¦' + it.id + '"' + (it.done ? ' checked' : '') + '>'
-            + '<span class="ck-t">' + esc(it.t) + (it.qty ? ' <b>×' + it.qty + '</b>' : '') + '</span>'
+            + '<span class="ck-t">' + esc(it.t) + (it.qty ? ' <b>×' + it.qty + '</b>' : '') + '</span></label>'
             + (it.done && it.by ? '<span class="ck-by">' + esc(it.by) + '</span>' : '')
-            + '<button class="ck-x" data-ckdel="' + t.rowId + '¦' + it.id + '" title="刪除">✕</button></label>';
+            + '<button class="ck-ed" data-cked="' + t.rowId + '¦' + it.id + '" title="編輯" aria-label="編輯">✎</button>'
+            + '<button class="ck-x" data-ckdel="' + t.rowId + '¦' + it.id + '" title="刪除">✕</button></div>';
         }).join('')
         + '<div class="ck-add"><input id="ckin-' + t.rowId + '" placeholder="加一項…（可貼多行）">'
         + '<button data-ckadd="' + t.rowId + '">＋</button></div>'
@@ -254,6 +257,66 @@
         + '</div>';
     }
     return h + '</div>';
+  }
+  // 編輯單一子項(內容 + 份數)。用彈窗而不是行內輸入框:15 秒一次的輪詢重繪不會把它洗掉
+  function ckEditModal(rowId, itemId) {
+    var t = taskById(rowId), it = ckOf(t).filter(function (x) { return x.id === itemId; })[0];
+    if (!it) return;
+    openModal('<div class="lede">編輯子項</div><h3>' + esc(t.name) + '</h3>'
+      + '<div class="fld"><span>內容</span><textarea id="ckeT" rows="3">' + esc(it.t) + '</textarea></div>'
+      + '<label class="fld"><span>份數 選填</span><input type="number" id="ckeQ" min="1" value="' + (it.qty || '') + '"></label>'
+      + '<div class="sheet-acts"><button class="btn primary" id="ckeGo">儲存</button>'
+      + '<button class="btn ghost" data-close>取消</button></div>');
+    document.getElementById('ckeGo').onclick = function () {
+      var txt = v('ckeT');
+      if (!txt) { toast('內容不能是空的'); return; }
+      var q = parseInt(v('ckeQ'), 10);
+      t.checklist = ckOf(t).map(function (x) {
+        return x.id !== itemId ? x : { id: x.id, t: txt, qty: q > 0 ? q : null, done: x.done, by: x.by, at: x.at };
+      });
+      closeModal(); ckPush(rowId); render();
+    };
+  }
+  // 按住 ⠿ 拖曳排序(Pointer Events,手機/滑鼠都能用)。拖的時候直接在 DOM 裡搬,放開才讀順序、存檔
+  var ckDragging = false;
+  function ckDragStart(e, grip) {
+    var row = grip.closest('.ck-row'), body = row && row.parentNode, ids = grip.dataset.ckgrip.split('¦');
+    if (!row || !body) return;
+    e.preventDefault();
+    ckDragging = true; row.classList.add('dragging');
+    try { grip.setPointerCapture(e.pointerId); } catch (er) {}
+    function rowsNow() { return [].slice.call(body.querySelectorAll('.ck-row')); }
+    function move(ev) {
+      var y = ev.clientY, others = rowsNow().filter(function (r) { return r !== row; }), ref = null;
+      for (var i = 0; i < others.length; i++) {
+        var b = others[i].getBoundingClientRect();
+        if (y < b.top + b.height / 2) { ref = others[i]; break; }
+      }
+      if (ref) { if (row.nextSibling !== ref) body.insertBefore(row, ref); }
+      else if (others.length) {
+        var last = others[others.length - 1];
+        if (row.previousSibling !== last) body.insertBefore(row, last.nextSibling);
+      }
+      var sr = screen.getBoundingClientRect();   // 拖到邊邊就順便捲動
+      if (y < sr.top + 40) screen.scrollTop -= 14; else if (y > sr.bottom - 40) screen.scrollTop += 14;
+    }
+    function up() {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      ckDragging = false; row.classList.remove('dragging');
+      var order = rowsNow().map(function (r) { return r.dataset.ckrow; }), t = taskById(ids[0]);
+      if (t && t.checklist) {
+        var byId = {}; t.checklist.forEach(function (it) { byId[it.id] = it; });
+        var next = order.map(function (id) { return byId[id]; }).filter(Boolean);
+        var same = next.length === t.checklist.length && next.every(function (it, i) { return it === t.checklist[i]; });
+        if (next.length === t.checklist.length && !same) { t.checklist = next; ckPush(ids[0]); }
+      }
+      render();
+    }
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
   }
   function docsModal(rowId) {
     var t = T(rowId);
@@ -815,6 +878,24 @@
   function ltLog(id) {
     return (board.ltlog || []).filter(function (e) { return e.id === id; })
       .sort(function (a, b) { return a.t < b.t ? 1 : -1; });   // 新 → 舊
+  }
+  // 修改自己在進度時間軸送出的內容(伺服端也會再擋一次:只有姓名 = 自己的那筆能改)
+  function ltEditModal(rowNum) {
+    var e = (board.ltlog || []).filter(function (x) { return x._rowNum === rowNum; })[0];
+    if (!e) return;
+    if (e.who !== board.me.name) { toast('只能修改自己送出的內容'); return; }
+    openModal('<div class="lede">修改進度紀錄</div>'
+      + '<h3>' + (e.tag ? '〔' + esc(e.tag) + '〕' : '一筆動態') + '</h3>'
+      + '<div class="fld-hint">' + esc(e.t) + ' · 只改文字,時間和類型不變</div>'
+      + '<div class="fld"><span>內容</span><textarea id="ltEdT" rows="5">' + esc(e.text) + '</textarea></div>'
+      + '<div class="sheet-acts"><button class="btn primary" id="ltEdGo">儲存修改</button>'
+      + '<button class="btn ghost" data-close>取消</button></div>');
+    document.getElementById('ltEdGo').onclick = function () {
+      var txt = v('ltEdT');
+      if (!txt && !e.tag) { toast('內容不能是空的'); return; }
+      if (txt === e.text) { closeModal(); return; }
+      go('ltNoteEdit', { id: e.id, rowNum: e._rowNum, who: e.who, t: e.t, old: e.text, tag: e.tag, text: txt }, '已修改');
+    };
   }
   function ltLastT(t) { var l = ltLog(t.rowId)[0]; return l ? l.t : ''; }
   function ltSeenAt(id) { return (board.ltSeen || {})[id] || ''; }
@@ -1471,7 +1552,9 @@
           + '<div class="ev-top"><span class="ev-who">' + esc(e.who) + (mine ? '（我）' : '') + '</span>'
           + (e.tag ? '<span class="tag ' + tagCls + '">' + esc(e.tag) + '</span>' : '')
           + (isFresh ? '<span class="ev-new">新</span>' : '')
-          + '<span class="ev-t">' + esc(ltRel(e.t)) + '</span></div>'
+          + '<span class="ev-t">' + esc(ltRel(e.t)) + '</span>'
+          + (mine && !spin && e._rowNum ? '<button class="ev-ed" data-lted="' + e._rowNum + '" title="修改我送出的這一筆">✎ 修改</button>' : '')
+          + '</div>'
           + (e.text
               ? '<div class="ev-x">' + (spin ? '<span class="ev-branch">↳</span> ' : '') + esc(e.text) + '</div>'
               : (tagged ? '' : '<div class="ev-x plain">（只按了「動過了」,沒留字）</div>'))
@@ -1499,6 +1582,9 @@
       ltShowUpd = false; if (openLong === it.rowId) ltPreserve(renderLongDetail);
     }, 10000);
 
+    [].forEach.call(screen.querySelectorAll('[data-lted]'), function (b) {
+      b.onclick = function () { ltEditModal(+b.dataset.lted); };
+    });
     document.getElementById('ltBack').onclick = function () { stopLtPoll(); openLong = null; ltTagSel = null; ltCloseArm = null; ltNoticeOpen = false; ltShowUpd = false; ltFreshSnap = null; render(); };
     document.getElementById('ltEdit').onclick = function () { editModal(it.rowId); };
     var ltDocBtn = document.getElementById('ltDocSet');
@@ -1683,6 +1769,7 @@
   // 子項清單「加一項」這類動態 id 的輸入框也算)—— 這時就算資料有變也先別重繪,
   // 不然重繪換掉輸入框會打斷正在打的字(尤其中文組字,ltPreserve 只救得回已送出的字元)
   function ltIsEditingKeepField() {
+    if (ckDragging) return true;   // 正在拖子項排序 —— 重繪會把拖到一半的列洗掉
     var act = document.activeElement;
     return !!(act && (act.tagName === 'INPUT' || act.tagName === 'TEXTAREA'));
   }
@@ -3563,6 +3650,11 @@
     render();
   };
 
+  screen.addEventListener('pointerdown', function (e) {
+    var g = e.target.closest('[data-ckgrip]');
+    if (g) ckDragStart(e, g);
+  });
+
   screen.onchange = function (e) {
     if (e.target.closest('[data-calmo]')) { calMonth = e.target.value; calDay = null; render(); return; }
     if (e.target.closest('[data-calrange]')) { calListDays = +e.target.value; render(); return; }
@@ -3607,6 +3699,8 @@
       }
       return;
     }
+    var cked = e.target.closest('[data-cked]');
+    if (cked) { var qe = cked.dataset.cked.split('¦'); ckEditModal(qe[0], qe[1]); return; }
     var cka = e.target.closest('[data-ckadd]');
     if (cka) {
       var rid = cka.dataset.ckadd, inp = document.getElementById('ckin-' + rid);
